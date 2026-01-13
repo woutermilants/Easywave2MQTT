@@ -123,7 +123,7 @@ namespace Easywave2Mqtt
           case DeviceType.Light:
           {
             var name = device.Name ?? $"Light {device.Name}";
-            EasywaveSwitch? light = await AddLight(id, name, device.Area, device.IsToggle).ConfigureAwait(false);
+            EasywaveSwitch? light = await AddLight(id, name, device.Area, device.IsToggle, device.IsTurnOnDisabled).ConfigureAwait(false);
             foreach (Subscription sub in device.Subscriptions)
             {
               var address = sub.Address ?? throw new InvalidConfigurationException($"Light {id} has a subscription without address");
@@ -163,11 +163,11 @@ namespace Easywave2Mqtt
       }
     }
 
-    private async Task<EasywaveSwitch> AddLight(string id, string? name, string? area, bool isToggle)
+    private async Task<EasywaveSwitch> AddLight(string id, string? name, string? area, bool isToggle, bool isTurnOnDisabled)
     {
-      LogLightDeclare(id, name, area, isToggle);
+      LogLightDeclare(id, name, area, isToggle, isTurnOnDisabled);
       var switchName = name ?? $"Lamp {id}";
-      var newSwitch = new EasywaveSwitch(id, switchName, isToggle, loggerFactory.CreateLogger<EasywaveSwitch>());
+      var newSwitch = new EasywaveSwitch(id, switchName, isToggle, isTurnOnDisabled, loggerFactory.CreateLogger<EasywaveSwitch>());
       newSwitch.StateChanged += HandleEasywaveSwitchStateChanged;
       newSwitch.RequestSend += HandleEasywaveRequest;
       await bus.PublishAsync(new DeclareLight(id, switchName, area)).ConfigureAwait(false);
@@ -297,8 +297,8 @@ namespace Easywave2Mqtt
     [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "    Declaring button {Name} ({Id}:{KeyCode}) in {Area}")]
     public partial void LogButtonDeclare(string id, char keyCode, string name, string? area = "<<no area passed>>");
 
-    [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "    Declaring light {Name} ({Id}:{IsToggle}) in {Area}")]
-    public partial void LogLightDeclare(string id, string? name = "<<no name passed>>", string? area = "<<no area passed>>", bool isToggle = false);
+    [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "    Declaring light {Name} ({Id}:{IsToggle}) in {Area} with turnOnDisabled: {IsTurnOnDisabled}")]
+    public partial void LogLightDeclare(string id, string? name = "<<no name passed>>", string? area = "<<no area passed>>", bool isToggle = false, bool isTurnOnDisabled = false);
 
     [LoggerMessage(EventId = 8, Level = LogLevel.Information, Message = "    Declaring blind {Name} ({Id}) in {Area}")]
     public partial void LogBlindDeclare(string id, string? name = "<<no name passed>>", string? area = "<<no area passed>>");

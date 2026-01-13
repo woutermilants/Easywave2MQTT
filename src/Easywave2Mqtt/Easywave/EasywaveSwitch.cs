@@ -3,13 +3,14 @@ using Easywave2Mqtt.Mqtt;
 
 namespace Easywave2Mqtt.Easywave
 {
-  internal sealed partial class EasywaveSwitch(string id, string name, bool isToggle, ILogger<EasywaveSwitch> logger) : IEasywaveEventListener
+  internal sealed partial class EasywaveSwitch(string id, string name, bool isToggle, bool isTurnOnDisabled, ILogger<EasywaveSwitch> logger) : IEasywaveEventListener
   {
     private readonly ILogger<EasywaveSwitch> _logger = logger;
     private SwitchState _state = SwitchState.Unknown;
 
     public string Name { get; set; } = name;
     public bool IsToggle { get; } = isToggle;
+    public bool IsTurnOnDisabled { get; } = isTurnOnDisabled;
 
     public SwitchState State
     {
@@ -57,6 +58,7 @@ namespace Easywave2Mqtt.Easywave
 
     public async Task HandleCommand(string command)
     {
+      LogEvent("Received command " + command + " turnOnDisabled " + IsTurnOnDisabled);
       EasywaveSubscription? trigger = Subscriptions.FirstOrDefault(sub => sub.CanSend);
       if (trigger == null)
       {
@@ -67,8 +69,15 @@ namespace Easywave2Mqtt.Easywave
         switch (command)
         {
           case Light.OnCommand:
-            await RequestSend(trigger.Address, trigger.KeyCode).ConfigureAwait(false);
-            State = SwitchState.On;
+            if (!IsTurnOnDisabled)
+            {
+              await RequestSend(trigger.Address, trigger.KeyCode).ConfigureAwait(false);
+              State = SwitchState.On;
+            }
+            else
+            {
+              State = SwitchState.Off;
+            }
             break;
           case Light.OffCommand:
             await RequestSend(trigger.Address, (char)(trigger.KeyCode + 1)).ConfigureAwait(false);
@@ -89,6 +98,9 @@ namespace Easywave2Mqtt.Easywave
 
     [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Switch {Name} is turned {State}")]
     public partial void LogStateSwitch(string name, SwitchState state);
+
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "{EasywaveEvent}")]
+    public partial void LogEvent(string easywaveEvent);
   }
 
 }

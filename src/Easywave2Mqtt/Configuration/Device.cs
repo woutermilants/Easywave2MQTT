@@ -14,6 +14,7 @@ namespace Easywave2Mqtt.Configuration
     public string? Name { get; set; }
     public string? Area { get; set; }
     public bool IsToggle { get; set; }
+    public bool IsTurnOnDisabled { get; set; }
 
     public Collection<char> Buttons { get; } = [];
     public Collection<Subscription> Subscriptions { get; } = [];
