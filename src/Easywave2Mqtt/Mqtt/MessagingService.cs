@@ -148,6 +148,11 @@ namespace Easywave2Mqtt.Mqtt
 
     private async Task MessageHandler(MqttApplicationMessageReceivedEventArgs arg)
     {
+      // Ignore retained messages
+      if (arg.ApplicationMessage.Retain)
+      {
+        return;
+      }
       LogTopicReceived(arg.ApplicationMessage.Topic, arg.ApplicationMessage.ConvertPayloadToString());
       arg.IsHandled = true;
       await arg.AcknowledgeAsync(CancellationToken.None).ConfigureAwait(false);
